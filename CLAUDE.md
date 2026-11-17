@@ -26,7 +26,7 @@ Un solo archivo, sin módulos, cargado con `<script src>` clásico (no ES module
 
 **Entidades** (`Bullet`, `Asteroid`, `Ship`, `Particle`): clases con el mismo contrato informal `update(dt)` / `draw()` y una bandera `dead`. Dibujan directo sobre el `ctx` global con `ctx.save()/restore()`, en coordenadas locales centradas en la entidad. Para añadir una entidad nueva, seguir ese contrato y añadir su array al estado global, al `update` y al `draw` (el orden en `draw()` define la profundidad: partículas → asteroides → balas → nave → HUD → overlay).
 
-**Estado global**: `ship, bullets, asteroids, particles, score, lives, level, state, deadTimer`. `state` es `'playing' | 'dead' | 'gameover'` y `update()` hace early-return en los dos últimos (en `'dead'` los asteroides siguen moviéndose, en `'gameover'` solo las partículas). `initGame()` resetea todo; `nextLevel()` limpia balas/partículas y repuebla.
+**Estado global**: `ship, bullets, asteroids, particles, powerups, score, lives, level, state, deadTimer`. `state` es `'playing' | 'dead' | 'gameover'` y `update()` hace early-return en los dos últimos (en `'dead'` los asteroides siguen moviéndose, en `'gameover'` solo las partículas). `initGame()` resetea todo; `nextLevel()` limpia balas/partículas y repuebla.
 
 **Ciclo de vida de entidades**: nada se borra dentro de los bucles de colisión. Se marca `dead = true`, los fragmentos nuevos se acumulan en un array temporal, y al final se reemplazan los arrays con `.filter(x => !x.dead).concat(nuevos)`. Mantener este patrón al tocar colisiones.
 
@@ -38,6 +38,8 @@ Un solo archivo, sin módulos, cargado con `<script src>` clásico (no ES module
 
 **Constantes de tuning** viven como `const` locales dentro del método que las usa (`ROT`, `THRUST`, `DRAG` en `Ship.update`; `SPEED` en `Bullet`; cooldown de disparo `0.2`s en `tryShoot`). Ajustar la jugabilidad es editar ahí, no un bloque de config central.
 
+**Power-ups**: `PowerUp` sigue el mismo contrato que las demás entidades y vive en el array `powerups`. Constantes propias (`TRIPLE_DURATION`, `TRIPLE_SPREAD`, `DROP_CHANCE`) justo encima de la clase. El efecto se guarda como `ship.tripleTimer` (no se reinicia en `ship.reset()`, se pierde en `killShip()`), y `tryShoot()` decide el abanico según ese timer. Cada nivel garantiza una aparición: `spawnAsteroids()` marca un asteroide al azar con `carries = true` y la colisión bala-asteroide suelta el power-up sí o sí al destruirlo (`split()` **no** propaga la bandera a los fragmentos). Al añadir un power-up nuevo, extender el drop en la colisión bala-asteroide y el indicador de `drawHUD`.
+
 ## Discrepancia conocida
 
-El `README.md` describe power-ups y tipos especiales de asteroide (p. ej. "estrella fugaz") que **no existen** en `game.js`. Si se implementan, actualizar el README; si no, no asumir que ese código está en algún sitio.
+El `README.md` menciona tipos especiales de asteroide (p. ej. "estrella fugaz") que **no existen** en `game.js`. Si se implementan, actualizar el README; si no, no asumir que ese código está en algún sitio.
